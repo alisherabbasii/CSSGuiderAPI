@@ -13,6 +13,14 @@ const dataSchema = new mongoose.Schema({
     password:{
         type:String,
         required:true
+    },
+    role:{
+        type:String,
+        required:true
+    },
+    isVerify:{
+        type:Boolean,
+        required:false
     }
 });
 

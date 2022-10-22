@@ -3,18 +3,19 @@ const router = express.Router();
  const Model = require('../Model/model');
  const authModel = require('../Model/auth');
 
+ 
 
  router.post('/authUser',async (req,res)=>{
-    const { username, password } = req.body;
+    const { username, password } = req.query;
     const data = new authModel({
-        username:req.body.username,
-        password : req.body.password
+        username:req.query.username,
+        password : req.query.password
     });
 
     try {
         const user = await authModel.findOne({username });
         if(user){
-            if(user.password == password){
+            if(user.password == password && user.isVerify){
                 res.json(user);
             }else{
                 res.json({status:400});
@@ -30,27 +31,51 @@ const router = express.Router();
 });
 
 router.post('/addUser',async (req,res)=>{
-    const { username } = req.body;
+    const { username } = req.query;
     const data = new authModel({
-        name:req.body.name,
-        username : req.body.username,
-        password : req.body.password
+        name:req.query.name,
+        username : req.query.username,
+        password : req.query.password,
+        role:req.query.role,
+        isVerify:req.query.isVerify
     });
 
     try {
         const email = await authModel.findOne({username });
-        if(email){
-            res.status().send(400).send("User Already Exist");
+        if(email != null){
+            res.json("userexist");
         }else{
             const dataToSave = await data.save();
             res.send("Added Successfully...!!!");
         }
         
     } catch (error) {
-        res.status().send(400).json({message:error.message});
+        //res.status().send(400).json({message:error.message});
     }
 
 });
+
+
+router.post('/verifyUser',async (req,res)=>{
+    try {
+        const id = req.query.id;
+        const body ={isVerify: req.query.isVerify};
+        const options ={new :true}
+
+        const result = await authModel.findByIdAndUpdate(id,body,options);
+        res.json(result);
+
+        //const result = await authModel.updateOne({"_id":id},{"password":body.password});
+
+        // res.json(result);
+    } catch (error) {
+            res.status(400).json({message:error.message});
+    }
+
+});
+
+
+
 
 router.patch('/update/:id', async (req,res)=>{
 
@@ -71,7 +96,52 @@ router.patch('/update/:id', async (req,res)=>{
 
 });
 
+router.get('/getUserRequests',async (req,res)=>{
+    try {
+        const user = await authModel.find({role:'user',isVerify:false});
+        if(user){
+                res.json(user);
+        }else{
+            res.json({status:400});
+        }
+       
+    } catch (error) {
+        res.status(400).json({message:error.message});
+    }
 
+});
+
+router.get('/getAllUsers',async (req,res)=>{
+    try {
+        const user = await authModel.find({});;
+        if(user){
+                res.json(user);
+        }else{
+            res.json({status:400});
+        }
+       
+    } catch (error) {
+        res.status(400).json({message:error.message});
+    }
+
+});
+
+
+
+router.get('/getTutorRequests',async (req,res)=>{
+    try {
+        const user = await authModel.find({role:'tutor',isVerify:false});
+        if(user){
+                res.json(user);
+        }else{
+            res.json({status:400});
+        }
+       
+    } catch (error) {
+        res.status(400).json({message:error.message});
+    }
+
+});
 
 
  router.post('/post',async (req,res)=>{
@@ -128,7 +198,7 @@ router.patch('/update/:id', async (req,res)=>{
 router.delete('/delete/:id',async (req,res)=>{
     try {
         const id = req.params.id;
-        const data = await Model.findByIdAndDelete(id);
+        const data = await authModel.findByIdAndDelete(id);
         res.send(`document with ${data.name} is deleted...!!!`);
     } catch (error) {
         res.status(400).json({message:error.message});
